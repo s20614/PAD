@@ -36,6 +36,6 @@ if __name__ == '__main__':
     print(volume_of_sphere(2))
 
     # Zadanie 4
-    print('Zadanie 3')
+    print('Zadanie 4')
     print(num_fact(10))
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
