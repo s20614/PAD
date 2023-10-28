@@ -21,7 +21,7 @@ def repeat(gen_obj, count=-1):
 
 
 def main():
-    for i in repeat(10,5):
+    for i in repeat(10, 5):
         print(i, end=" ")
 
 
