@@ -14,17 +14,26 @@ def get_data_from_file(file_name):
 
 
 def get_data_in_numpy_array(pd_array):
-    data1 = np.array(pd_array)
-    return data1
+    data_1 = np.array(pd_array)
+    return data_1
+
+
+def outlier_data(out_data):
+    # Zastosowanie zasady IQR do identyfikacji danych odstających
+    Q1 = out_data['price'].quantile(0.25)
+    Q3 = out_data['price'].quantile(0.75)
+    IQR = Q3 - Q1
+
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
+
+    out_data = out_data[(out_data['price'] >= lower_bound) & (out_data['price'] <= upper_bound)]
+
+    print("Dane odstające:")
+    return out_data
 
 
 def data_clean(data):
-    # typy danych dla poszczególnych kolumn
-    # print(data.dtypes)
-
-    # typy danych dla poszczególnych kolumn i liczba wartości null
-    # print(data.info())
-
     # Usunięcie spacji przed nazwami kolumn
     data.columns = [col.strip() for col in data.columns]
     # print(data.info())
@@ -60,17 +69,20 @@ def data_clean(data):
     data['depth'] = data['depth'].astype('float64')
     data['table'] = data['table'].astype('int64')
 
+    #Usunięcie wartości odstających
+    data = outlier_data(data)
+    print(data)
+
     # Suma zduplikowanych wartości
     # print(data.duplicated().sum())
 
-    # Wartości w tych kolumnach posiadają poprawną wartość ze zbioru co wskazuje na to że są najbardziej prawdopodobnie rzeczywiste
-    duplicates = data.duplicated(subset=["clarity", "color", "cut", 'x dimension'], keep=False)
-    print(data[duplicates])
-
+    #Wartości w tych kolumnach posiadają poprawną wartość ze zbioru co wskazuje na to że są najbardziej prawdopodobnie rzeczywiste
+    #Usunięcie duplikatów
+    data = data.drop_duplicates(subset=["clarity", "color", "cut", 'x dimension'], keep='first')
     print(data)
 
 
 if __name__ == '__main__':
     set_settings()
-    data = get_data_from_file('Dane/messy_data.csv')
-    data_clean(data)
+    data_from_file = get_data_from_file('Dane/messy_data.csv')
+    data_clean(data_from_file)
