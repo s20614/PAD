@@ -1,5 +1,8 @@
 import numpy as np
 import pandas as pd
+from dash import dash
+
+from ProjektZaliczeniowy import Dashboard
 
 
 def set_settings():
@@ -80,9 +83,12 @@ def data_clean(data):
     #Usunięcie duplikatów
     data = data.drop_duplicates(subset=["clarity", "color", "cut", 'x dimension'], keep='first')
     print(data)
+    return data
 
 
 if __name__ == '__main__':
+    app = dash.Dash(__name__)
     set_settings()
     data_from_file = get_data_from_file('Dane/messy_data.csv')
-    data_clean(data_from_file)
+    cleaned_data = data_clean(data_from_file)
+    Dashboard.dashboard_creation(cleaned_data, app)
