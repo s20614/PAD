@@ -36,30 +36,30 @@ def regression_model(df):
         ('scaler', StandardScaler())
     ])
 
-    categorical_transformer = Pipeline(steps=[
+    categorical_transformer = Pipeline(steps=[ # Zastosowanie kodowania OneHotEncoder do zmiennych kategorycznych w celu przekształcenia ich do postaci numerycznej
         ('onehot', OneHotEncoder(handle_unknown='ignore'))
     ])
 
-    preprocessor = ColumnTransformer(
+    preprocessor = ColumnTransformer( # Zastosowanie transformacji kolumn do danych numerycznych i kategorycznych
         transformers=[
             ('num', numeric_transformer, numeric_features),
             ('cat', categorical_transformer, categorical_features)
         ])
 
-    model = Pipeline(steps=[
+    model = Pipeline(steps=[ # Zastosowanie modelu regresji liniowej
         ('preprocessor', preprocessor),
         ('regressor', LinearRegression())
     ])
 
     # Dopasowanie modelu
-    model.fit(X_train, y_train)
+    model.fit(X_train, y_train) # Dopasowanie modelu do danych treningowych
 
     # Ocena modelu
-    y_pred = model.predict(X_test)
+    y_pred = model.predict(X_test) # Przewidywanie wartości dla danych testowych
     mse = mean_squared_error(y_test, y_pred)
-    r2 = r2_score(y_test, y_pred)
-    print(f'MSE: {mse}')
-    print(f'R^2: {r2}')
+    r2 = r2_score(y_test, y_pred)  # Współczynnik determinacji
+    print(f'MSE: {mse}') # Błąd średniokwadratowy (MSE) - średnia kwadratów błędów predykcji modelu regresji
+    print(f'R^2: {r2}') # Współczynnik determinacji (R^2) - miara dopasowania modelu regresji do danych
     # wizualizacja wyników
     scatter_fig = {
         'data': [
@@ -143,7 +143,7 @@ def application_layout(data, app):
     )
     def update_sample_table(data):
         return [html.Tr([html.Th(col) for col in data[0].keys()])] + \
-            [html.Tr([html.Td(row[col]) for col in data[0].keys()]) for row in data[:]]
+            [html.Tr([html.Td(row[col]) for col in data[0].keys()]) for row in data[:20]]
 
     app.run_server(debug=True)
 
