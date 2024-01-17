@@ -23,12 +23,12 @@ def get_data_in_numpy_array(pd_array):
 
 def outlier_data(out_data):
     # Zastosowanie zasady IQR do identyfikacji danych odstających
-    Q1 = out_data['price'].quantile(0.25)
-    Q3 = out_data['price'].quantile(0.75)
-    IQR = Q3 - Q1
+    Q1 = out_data['price'].quantile(0.25) #Pierwszy kwartyl
+    Q3 = out_data['price'].quantile(0.75) #Trzeci kwartyl
+    IQR = Q3 - Q1  # Rozstęp ćwiartkowy różnica między trzecim a pierwszym kwartylem
 
-    lower_bound = Q1 - 1.5 * IQR
-    upper_bound = Q3 + 1.5 * IQR
+    lower_bound = Q1 - 1.5 * IQR # Dolna granica
+    upper_bound = Q3 + 1.5 * IQR # Górna granica
 
     out_data = out_data[(out_data['price'] >= lower_bound) & (out_data['price'] <= upper_bound)]
 
