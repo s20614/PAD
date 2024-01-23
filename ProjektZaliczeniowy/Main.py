@@ -32,7 +32,7 @@ def outlier_data(out_data):
 
     out_data = out_data[(out_data['price'] >= lower_bound) & (out_data['price'] <= upper_bound)]
 
-    print("Dane odstające:")
+    # print("Dane odstające:")
     return out_data
 
 
@@ -44,8 +44,8 @@ def data_clean(data):
 
     # Zmiana błędnych/pustych wartości na NaN
     data = data.replace({"": np.nan, " ": np.nan})
-    print(data.isna().any())
-    print(data.isna().sum())
+    # print(data.isna().any())
+    # print(data.isna().sum())
 
     # Zmiana na duże litery dla zgodności
     data['cut'] = data['cut'].str.upper()
@@ -71,10 +71,13 @@ def data_clean(data):
     data['z dimension'] = data['z dimension'].astype('float64')
     data['depth'] = data['depth'].astype('float64')
     data['table'] = data['table'].astype('int64')
+    data['clarity'] = data['table'].astype('string')
+    data['color'] = data['table'].astype('string')
+    data['cut'] = data['table'].astype('string')
 
     #Usunięcie wartości odstających
     data = outlier_data(data)
-    print(data)
+    # print(data)
 
     # Suma zduplikowanych wartości
     # print(data.duplicated().sum())
@@ -82,7 +85,7 @@ def data_clean(data):
     #Wartości w tych kolumnach posiadają poprawną wartość ze zbioru co wskazuje na to że są najbardziej prawdopodobnie rzeczywiste
     #Usunięcie duplikatów
     data = data.drop_duplicates(subset=["clarity", "color", "cut", 'x dimension'], keep='first')
-    print(data)
+    # print(data)
     return data
 
 
