@@ -64,26 +64,26 @@ def data_clean(data):
     data['table'].fillna(data['table'].median(), inplace=True)
 
     # Konwersja danych na poprawny typ
-    data['price'] = data['price'].astype('int64')
+    data['price'] = data['price'].astype('float64')
     data['carat'] = data['carat'].astype('float64')
     data['x dimension'] = data['x dimension'].astype('float64')
     data['y dimension'] = data['y dimension'].astype('float64')
     data['z dimension'] = data['z dimension'].astype('float64')
     data['depth'] = data['depth'].astype('float64')
     data['table'] = data['table'].astype('int64')
-    data['clarity'] = data['table'].astype('string')
-    data['color'] = data['table'].astype('string')
-    data['cut'] = data['table'].astype('string')
+    data['clarity'] = data['clarity'].astype('string')
+    data['color'] = data['color'].astype('string')
+    data['cut'] = data['cut'].astype('string')
 
-    #Usunięcie wartości odstających
+    # Usunięcie wartości odstających
     data = outlier_data(data)
     # print(data)
 
     # Suma zduplikowanych wartości
     # print(data.duplicated().sum())
 
-    #Wartości w tych kolumnach posiadają poprawną wartość ze zbioru co wskazuje na to że są najbardziej prawdopodobnie rzeczywiste
-    #Usunięcie duplikatów
+    # Wartości w tych kolumnach posiadają poprawną wartość ze zbioru co wskazuje na to że są najbardziej prawdopodobnie rzeczywiste
+    # Usunięcie duplikatów
     data = data.drop_duplicates(subset=["clarity", "color", "cut", 'x dimension'], keep='first')
     # print(data)
     return data

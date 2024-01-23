@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import plotly.express as px
 from dash import Dash, dcc, html, dash
@@ -12,13 +13,28 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 import statsmodels.api as sm
 
 
-
 # 2. wizualizacja rozkładu zmiennej price
 def visaulization_distribution_variable_price(data):
     fig = px.histogram(data, x="price", nbins=50, title='Rozkład zmiennej price')
     fig.update_xaxes(title_text='price')
     fig.update_yaxes(title_text='count')
     return fig
+
+
+def backward_elimination(X, y, significance_level=0.05):
+    features = X.columns
+    while len(features) > 0:
+        X_const = sm.add_constant(X[features])
+        print(np.asarray(X))
+        print(np.asarray(y))
+        model = sm.OLS(y, X_const).fit()
+        max_p_value = max(model.pvalues)
+        if max_p_value > significance_level:
+            excluded_feature = model.pvalues.idxmax()
+            features = features.drop(excluded_feature)
+        else:
+            break
+    return X[features]
 
 
 # 3 i 4. budowa modelu regresji ceny od pozostałych zmiennych. Istotne zmienne należy wybrać eliminacją wsteczną lub selekcją postępującą.
@@ -31,48 +47,90 @@ def regression_model(df):
     numeric_features = ['carat', 'x dimension', 'y dimension', 'z dimension', 'depth', 'table']
     categorical_features = ['clarity', 'color', 'cut']
 
-
     numeric_transformer = Pipeline(steps=[
         ('scaler', StandardScaler())
     ])
 
-    categorical_transformer = Pipeline(steps=[ # Zastosowanie kodowania OneHotEncoder do zmiennych kategorycznych w celu przekształcenia ich do postaci numerycznej
+    categorical_transformer = Pipeline(steps=[
+        # Zastosowanie kodowania OneHotEncoder do zmiennych kategorycznych w celu przekształcenia ich do postaci numerycznej
         ('onehot', OneHotEncoder(handle_unknown='ignore'))
     ])
 
-    preprocessor = ColumnTransformer( # Zastosowanie transformacji kolumn do danych numerycznych i kategorycznych
+    preprocessor = ColumnTransformer(  # Zastosowanie transformacji kolumn do danych numerycznych i kategorycznych
         transformers=[
             ('num', numeric_transformer, numeric_features),
             ('cat', categorical_transformer, categorical_features)
         ])
 
-    model = Pipeline(steps=[ # Zastosowanie modelu regresji liniowej
+    model = Pipeline(steps=[  # Zastosowanie modelu regresji liniowej
         ('preprocessor', preprocessor),
         ('regressor', LinearRegression())
     ])
 
     # Dopasowanie modelu
-    model.fit(X_train, y_train) # Dopasowanie modelu do danych treningowych
+    model.fit(X_train, y_train)  # Dopasowanie modelu do danych treningowych
 
     # Ocena modelu
-    y_pred = model.predict(X_test) # Przewidywanie wartości dla danych testowych
+    y_pred = model.predict(X_test)  # Przewidywanie wartości dla danych testowych
     mse = mean_squared_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)  # Współczynnik determinacji
-    print(f'MSE: {mse}') # Błąd średniokwadratowy (MSE) - średnia kwadratów błędów predykcji modelu regresji
-    print(f'R^2: {r2}') # Współczynnik determinacji (R^2) - miara dopasowania modelu regresji do danych
+    print(f'MSE: {mse}')  # Błąd średniokwadratowy (MSE) - średnia kwadratów błędów predykcji modelu regresji
+    print(f'R^2: {r2}')  # Współczynnik determinacji (R^2) - miara dopasowania modelu regresji do danych
     # wizualizacja wyników
     scatter_fig = {
         'data': [
             {'x': y_test, 'y': y_pred, 'type': 'scatter', 'mode': 'markers'}
         ],
-        'layout': {'title': f'Model Regresji - Przewidywane vs. Rzeczywiste'}
+        'layout': {'title': f'Model Regresji - Przewidywane vs. Rzeczywiste',
+        'xaxis': {'title': 'Rzeczywiste'},
+        'yaxis': {'title': 'Przewidywane'}
+                   }
     }
 
     return scatter_fig
 
+
+def regression_model_with_backward_elimination(df):
+    df['price'] = df['price'].astype('float64')
+    df_float_only = df.select_dtypes(include='float64')
+    X = df_float_only.drop('price', axis=1)
+    y = df_float_only['price']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Zakodowanie zmiennych kategorialnych
+    X_train_encoded = pd.get_dummies(X_train)
+
+    # Eliminacja wsteczna
+    X_train_backward = backward_elimination(X_train_encoded, y_train)
+
+    # Dopasowanie modelu
+    model_backward = sm.OLS(y_train, X_train_backward).fit()
+
+    # Zakodowanie i eliminacja zmiennych na zbiorze testowym
+    X_test_encoded = pd.get_dummies(X_test)
+    X_test_backward = X_test_encoded[X_train_backward.columns]
+
+    # Predykcja na zbiorze testowym
+    y_pred = model_backward.predict(X_test_backward)
+
+    # Porównanie wyników
+    mse = mean_squared_error(y_test, y_pred)
+
+    scatter_fig = {
+        'data': [
+            {'x': y_test, 'y': y_pred, 'type': 'scatter', 'mode': 'markers'}
+        ],
+        'layout': {'title': f'Model Regresji z eliminacją wsteczną - Porównanie Rzeczwiste vs. Przewidywane',
+        'xaxis': {'title': 'Rzeczywiste'},
+        'yaxis': {'title': 'Przewidywane'}
+                   }
+    }
+
+    return scatter_fig
+
+
 # 5. stworzenie dashboardu z wykresami i tabelami
 def application_layout(data, app):
-
     # Dodanie komponentu Store
     app.layout = html.Div([
         dcc.Store(id='data-store', storage_type='memory', data=data.to_dict('records')),
@@ -94,6 +152,10 @@ def application_layout(data, app):
         html.H2("Model Regresji - Rzeczywiste vs. Przewidywane"),
 
         dcc.Graph(id='scatter-fig'),
+
+        html.H2("Model Regresji z eliminacją wsteczną - Porównanie Rzeczwiste vs. Przewidywane"),
+
+        dcc.Graph(id='scatter-fig-backward'),
 
         html.H2("Rozkład zmiennej price"),
         # Histogram: Rozkład zmiennej price
@@ -127,6 +189,13 @@ def application_layout(data, app):
     def predict_vs_real(data):
         return regression_model(pd.DataFrame(data))
 
+    @app.callback(
+        Output('scatter-fig-backward', 'figure'),
+        [Input('data-store', 'data')]
+    )
+    def predict_vs_real_with_backward_elimination(data):
+        return regression_model_with_backward_elimination(pd.DataFrame(data))
+
     # Funkcja aktualizująca wykres punktowy
     @app.callback(
         Output('scatter-plot', 'figure'),
@@ -152,4 +221,4 @@ def dashboard_creation(data, app):
     visaulization_distribution_variable_price(data)
     regression_model(data)
     application_layout(data, app)
-
+    regression_model_with_backward_elimination(data)
